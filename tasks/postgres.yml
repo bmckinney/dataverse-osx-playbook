@@ -1,4 +1,7 @@
 ---
+- stat: path={{launch_agents_dir}}
+  register: launch_agents_dir
+
 - name: check if postgresql is loaded
   shell: launchctl list
   changed_when: False
@@ -92,6 +95,7 @@
 
 - name: copy postgresql launchagent plist
   command: "cp files/postgresql.plist {{launch_agents_dir}}/postgresql.plist"
+  when: launch_agents_dir.stat.woth == True
   tags:
     - pg-install
     - install
@@ -126,7 +130,7 @@
 
 - name: load postgresql launchagent
   shell: launchctl load -w {{launch_agents_dir}}/postgresql.plist
-  when: "'postgresql' not in postgresql_loaded_result.stdout"
+  when: "'postgresql' not in postgresql_loaded_result.stdout" and launch_agents_dir.stat.woth == True
   notify: create glassfish postgres database
   tags:
     - pg-install
@@ -134,6 +138,7 @@
 
 - name: start postgresql luanchagent
   shell: launchctl start postgresql
+  when: launch_agents_dir.stat.woth == True
   tags:
     - pg-init
     - pg-start
@@ -143,6 +148,7 @@
 
 - name: remove postgresql launchagent
   file: path={{launch_agents_dir}}/postgresql.plist state=absent
+  when: launch_agents_dir.stat.woth == True
   tags:
     - pg-clean
     - clean
